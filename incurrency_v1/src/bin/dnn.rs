@@ -42,6 +42,7 @@ mod app {
     #[cfg(not(target_arch = "arm"))]
     type Numeric = i16;
 
+    #[derive(Debug)]
     pub struct Tensor2D<const H: usize, const W: usize> {
         tensor: [[Numeric; W]; H],
     }
@@ -62,6 +63,7 @@ mod app {
         }
     }
 
+    #[derive(Debug)]
     pub struct Tensor1D<const W: usize> {
         tensor: [Numeric; W],
     }
@@ -119,7 +121,6 @@ mod app {
             *output_ref.mut_at(i) = output_i;
         }
     }
-
         static PARAM_1: Tensor2D<10, 50> = Tensor2D::new([
             [
                 7, 0, 2, 5, 4, 4, 5, 7, 9, 2, 9, 4, 9, 3, 0, 8, 4, 0, 2, 9, 3, 8, 1, 6, 6, 6, 5, 3, 3, 2,
@@ -162,7 +163,7 @@ mod app {
                 3, 1, 6, 9, 5, 9, 1, 1, 9, 3, 0, 9, 6, 3, 3, 0, 8, 5, 6, 6,
             ],
         ]);
-
+        
         static PARAM_2: Tensor2D<2, 10> = Tensor2D::new([
             [5, 7, 5, 9, 9, 4, 9, 0, 1, 4],
             [2, 9, 2, 3, 2, 2, 8, 0, 8, 4],
@@ -200,6 +201,8 @@ mod app {
 
     static input : Tensor1D<50> = Tensor1D::<50>::new([1; 50]);
     static mut ob1 :Tensor1D::<10> = Tensor1D::<10>::new([0; 10]);
+    static mut ob2 : Tensor1D::<2> = Tensor1D::<2>::new([0; 2]);
+       
     
 
     #[init]
@@ -212,31 +215,25 @@ mod app {
            // dnn_inference();
            //let input = Tensor1D::<50>::new([1; 50]);
            //let mut ob1 = Tensor1D::<10>::new([0; 10]);
-           let mut ob2 = Tensor1D::<2>::new([0; 2]);
+           //let mut ob2 = Tensor1D::<2>::new([0; 2]);
        
            //fc_layer_impl(&PARAM_1, &input, &mut ob1);
            //fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);
        
            unsafe{async_task1::spawn(&PARAM_1, &mut ob1).ok();}
-           unsafe {fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);}
-           
+           unsafe {async_task2::spawn(&PARAM_2, &mut ob1, &mut ob2);}
+           async_task3::spawn();
            //unsafe {  async_task2::spawn(&PARAM_1, &mut ob1).ok();  ;}
             
             //fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);}
 
-           hprintln!("Result: {}, {}", ob2.at(0), ob2.at(1));
         }
-        hprintln!("Benchmark complete.");
+       // hprintln!("Benchmark complete.");
 
-       
        // let mut ob2 = Tensor1D::<2>::new([0; 2]);
     
         //fc_layer_impl(&PARAM_1, &input, &mut ob1);
         // fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);
-
-
-
-    
 
         (Shared {a: 12}, Local {})
     }
@@ -261,15 +258,33 @@ mod app {
                 sum_i += *param.at(i, j) * *input.at(j);
             }
             let output_i = if sum_i > 0 { sum_i } else { 0 };
+            //hprintln!("output_i   {}", output_i);
             *output_ref.mut_at(i)  = output_i;
         }
 
     }
 
-    // #[task(priority = 3, shared = [a] )]
-    // async fn async_task2(mut cx: async_task2::Context,param: &'static Tensor2D<10, 50>, output_ref: &'static mut Tensor1D<10>) {
-    //     fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);
+    #[task(priority = 3, shared = [a] )]
+    async fn async_task2(mut cx: async_task2::Context,param: &'static Tensor2D<2, 10>, input1: &'static mut Tensor1D<10>, output_ref: &'static mut Tensor1D<2>) {
+        // fc_layer_impl2(&PARAM_2, &mut ob1, &mut ob2);
 
-    // }
+        let param_h = 2;
+        let param_w = 10;
+        
+        for i in 0..param_h {
+            let mut sum_i = 0;
+            for j in 0..param_w {
+                sum_i += *param.at(i, j) * *input1.at(j);
+            }
+            let output_i = if sum_i > 0 { sum_i } else { 0 };
+            *output_ref.mut_at(i) = output_i;
+        }
 
+    }
+
+    #[task(priority = 2, shared = [a] )]
+    async fn async_task3(mut cx: async_task3::Context){
+        unsafe{ hprintln!("Result: {}, {}", ob2.at(0), ob2.at(1));}
+        
+    }
 }
