@@ -259,7 +259,10 @@ mod app {
             }
             let output_i = if sum_i > 0 { sum_i } else { 0 };
             //hprintln!("output_i   {}", output_i);
+            start_atomic();
             *output_ref.mut_at(i)  = output_i;
+            end_atomic();
+
         }
 
     }
@@ -277,7 +280,9 @@ mod app {
                 sum_i += *param.at(i, j) * *input1.at(j);
             }
             let output_i = if sum_i > 0 { sum_i } else { 0 };
+            start_atomic();
             *output_ref.mut_at(i) = output_i;
+            end_atomic();
         }
 
     }
