@@ -384,7 +384,7 @@ pub fn save_variables<T>(mem_loc: *const T, size: usize) {
 }
 
 pub fn start_atomic(){
-    //checkpoint(true);
+    checkpoint(true);
     //undo or redo updates
     //memcopy some variables
            //unsafe{ptr::write(transcation_log as *mut u8, 1);} //still debating this

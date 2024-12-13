@@ -18,7 +18,7 @@ rtic = { path="/Users/kb/Documents/intermittentC/my_rtic/rtic/rtic", features = 
 # TODO(5) Add hal as dependency
 stm32f3xx-hal-v2 = {version = "0.6.0", features = ["stm32f303xc","rt"] }
 # TODO add a monotonic if you use scheduling
-#rtic-monotonics = { version = "2.0.0", features = [ "cortex-m-systick" ]}
+rtic-monotonics = { version = "2.0.0", features = [ "cortex-m-systick" ]}
 libm = "0.2.1" 
 
 # cargo build/run

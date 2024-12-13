@@ -33,6 +33,9 @@ void mspconsole_init();
 
 #[rtic::app(device = stm32f3xx_hal_v2::pac, dispatchers = [TIM2, TIM3, TIM4])]
 mod app {
+    
+    use cortex_m::peripheral::DWT;
+
     use core::arch::asm;
     use core::mem;
     use core::ptr;
@@ -471,11 +474,18 @@ mod app {
     struct Local {}
 
     #[init]
-    fn init(_: init::Context) -> (Shared, Local) {
+    fn init(cx: init::Context) -> (Shared, Local) {
+
+        
         hprintln!("init");
+        
+        let mut cp = cx.core;
+        cp.DWT.enable_cycle_counter();
+
         //initialization();
         //async_task1::spawn(12).ok();
         //async_task2::spawn().ok();
+
 
         (Shared {a: 0,}, Local {})
     }
@@ -528,8 +538,17 @@ mod app {
     
     #[task(priority = 1, shared = [a] )]
     async fn async_task1(mut cx: async_task1::Context, seed: u16) {
+        //hprintln!("I am getting sensor data");
 
-    unsafe {input1.xs = readSensor(seed*17);}
+        let start = DWT::get_cycle_count();
+      // start_atomic();
+            unsafe {input1.xs = readSensor(seed*17);}
+       // end_atomic();
+        let end = DWT::get_cycle_count();
+
+        let cycles = end.wrapping_sub(start);
+
+        hprintln!("async_task1 execution time: {}", cycles);
 
         // cx.shared.a.lock(|a| {
         //       *a = readSensor(seed*17);

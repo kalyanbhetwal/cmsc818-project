@@ -251,7 +251,19 @@ mod app {
     
     #[task(priority = 4, shared = [a] )]
     async fn async_task1(mut cx: async_task1::Context, param: &'static Tensor2D<10, 50>, output_ref: &'static mut Tensor1D<10>) {
-        fc_layer_impl(param, &input, output_ref);
+
+        let param_h = 10;
+        let param_w = 50;
+        
+        for i in 0..param_h {
+            let mut sum_i = 0;
+            for j in 0..param_w {
+                sum_i += *param.at(i, j) * *input.at(j);
+            }
+            let output_i = if sum_i > 0 { sum_i } else { 0 };
+            *output_ref.mut_at(i)  = output_i;
+        }
+
     }
 
     // #[task(priority = 3, shared = [a] )]
