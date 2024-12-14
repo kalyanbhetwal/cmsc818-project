@@ -19,6 +19,9 @@ use checkpoint::my_flash::{unlock, wait_ready, clear_error_flags, erase_page, wr
 
 #[rtic::app(device = stm32f3xx_hal_v2::pac, dispatchers = [TIM2, TIM3, TIM4])]
 mod app {
+
+    use cortex_m::peripheral::DWT;
+
     use core::arch::asm;
     use core::mem;
     use core::ptr;
@@ -206,7 +209,10 @@ mod app {
     
 
     #[init]
-    fn init(_: init::Context) -> (Shared, Local) {
+    fn init(cx: init::Context) -> (Shared, Local) {
+
+        let mut cp = cx.core;
+        cp.DWT.enable_cycle_counter();
         hprintln!("init");
         //initialization();
 
@@ -259,10 +265,15 @@ mod app {
             }
             let output_i = if sum_i > 0 { sum_i } else { 0 };
             //hprintln!("output_i   {}", output_i);
-            start_atomic();
-            *output_ref.mut_at(i)  = output_i;
-            end_atomic();
 
+            let start = DWT::get_cycle_count();
+            //start_atomic();
+            *output_ref.mut_at(i)  = output_i;
+           // end_atomic();
+            let end = DWT::get_cycle_count();
+            let cycles = end.wrapping_sub(start);
+
+            hprintln!("dnn async_task1 execution time: {}", cycles);
         }
 
     }
@@ -280,9 +291,15 @@ mod app {
                 sum_i += *param.at(i, j) * *input1.at(j);
             }
             let output_i = if sum_i > 0 { sum_i } else { 0 };
-            start_atomic();
-            *output_ref.mut_at(i) = output_i;
-            end_atomic();
+
+            let start = DWT::get_cycle_count();
+            //start_atomic();
+            *output_ref.mut_at(i)  = output_i;
+            //end_atomic();
+            let end = DWT::get_cycle_count();
+            let cycles = end.wrapping_sub(start);
+
+            hprintln!("dnn async_task2 execution time: {}", cycles);
         }
 
     }
